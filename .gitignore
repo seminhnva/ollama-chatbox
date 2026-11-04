@@ -3,3 +3,8 @@ backend/chat.db
 frontend/node_modules/
 frontend/dist/
 frontend/.angular/
+
+# Local-only files
+.claude/
+PROMPT.md
+README.vi.md
