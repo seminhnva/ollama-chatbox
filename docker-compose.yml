@@ -1,0 +1,22 @@
+services:
+  backend:
+    build: ./backend
+    environment:
+      DB_PATH: /data/chat.db
+      OLLAMA_URL: http://host.docker.internal:11434
+      OLLAMA_MODEL: gemma4:31b-cloud
+    volumes:
+      - chat-data:/data
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend
+
+volumes:
+  chat-data: {}
