@@ -4,7 +4,7 @@ services:
     environment:
       DB_PATH: /data/chat.db
       OLLAMA_URL: http://host.docker.internal:11434
-      OLLAMA_MODEL: gemma4:31b-cloud
+      OLLAMA_MODEL: gemma3:4b
     volumes:
       - chat-data:/data
     extra_hosts:

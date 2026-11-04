@@ -1,6 +1,6 @@
 # AI Coding's Chatbot
 
-Chatbot web cá nhân: Angular + Go (Gin) + SQLite, LLM là Ollama model `gemma4:31b-cloud`.
+Chatbot web cá nhân: Angular + Go (Gin) + SQLite, LLM là Ollama (mặc định model local `gemma3:4b`; đổi bằng `OLLAMA_MODEL`).
 Câu trả lời stream dần, hỗ trợ Markdown/code highlight, session được lưu và mở lại được, có dark/light mode và responsive.
 
 ## Yêu cầu
@@ -9,7 +9,7 @@ Câu trả lời stream dần, hỗ trợ Markdown/code highlight, session đư�
 - [Ollama](https://ollama.com) chạy trên máy, đã đăng nhập và có model:
   ```bash
   ollama signin
-  ollama pull gemma4:31b-cloud
+  ollama pull gemma3:4b
   ```
   Model `-cloud` chạy trên server của Ollama, lượt dùng tính vào tài khoản Ollama của bạn.
 
@@ -57,7 +57,7 @@ cd frontend && npx ng test --watch=false
 | `PORT` | `8081` | Cổng HTTP |
 | `DB_PATH` | `./chat.db` (Docker: `/data/chat.db`) | File SQLite |
 | `OLLAMA_URL` | `http://localhost:11434` (Docker: `http://host.docker.internal:11434`) | Địa chỉ Ollama |
-| `OLLAMA_MODEL` | `gemma4:31b-cloud` | Model dùng để chat |
+| `OLLAMA_MODEL` | `gemma3:4b` (compose); code mặc định `gemma4:31b-cloud` | Model dùng để chat |
 
 ## API
 
