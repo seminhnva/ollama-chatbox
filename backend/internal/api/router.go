@@ -25,6 +25,7 @@ func NewRouter(st *store.Store, chat ChatClient) *gin.Engine {
 	g.GET("", h.listSessions)
 	g.POST("", h.createSession)
 	g.GET("/:id/messages", h.listMessages)
+	g.POST("/:id/messages", h.sendMessage)
 	g.PATCH("/:id", h.renameSession)
 	g.DELETE("/:id", h.deleteSession)
 	return r
