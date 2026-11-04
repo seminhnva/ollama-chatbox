@@ -1,4 +1,4 @@
-import { Component, effect, ElementRef, inject, viewChild } from '@angular/core';
+import { Component, effect, ElementRef, inject, untracked, viewChild } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
 import { ChatStore } from '../core/chat.store';
@@ -36,8 +36,11 @@ export class ChatViewComponent {
   constructor() {
     effect(() => {
       const id = this.params()?.get('id');
-      if (id) void this.store.openSession(id);
-      else this.store.newChat();
+      // Only the route param may re-trigger this; the store's own signals must not.
+      untracked(() => {
+        if (id) void this.store.openSession(id);
+        else this.store.newChat();
+      });
     });
     effect(() => {
       this.store.messages();

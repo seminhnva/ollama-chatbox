@@ -61,6 +61,7 @@ export class ChatStore {
     this.controller = controller;
     this._isStreaming.set(true);
     let bubbleAdded = false;
+    let finished = false;
     try {
       let id = this._activeSessionId();
       if (!id) {
@@ -82,11 +83,16 @@ export class ChatStore {
         if (ev.type === 'delta') {
           this.patchLast((m) => ({ ...m, content: m.content + ev.text }));
         } else if (ev.type === 'done') {
+          finished = true;
           this.patchLast((m) => ({ ...m, id: ev.messageId }));
           this.touchSession(id, ev.title);
         } else {
+          finished = true;
           this.patchLast((m) => ({ ...m, error: ev.message }));
         }
+      }
+      if (!finished && !controller.signal.aborted) {
+        this.patchLast((m) => ({ ...m, error: 'Connection closed unexpectedly' }));
       }
     } catch (e) {
       if (controller.signal.aborted) return;
