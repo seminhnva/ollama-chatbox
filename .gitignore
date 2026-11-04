@@ -8,3 +8,5 @@ frontend/.angular/
 .claude/
 PROMPT.md
 README.vi.md
+docs/superpowers/
+CLAUDE.md
