@@ -1,0 +1,5 @@
+.superpowers/
+backend/chat.db
+frontend/node_modules/
+frontend/dist/
+frontend/.angular/
