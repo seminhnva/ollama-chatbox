@@ -7,7 +7,7 @@
 ## 1. Mục tiêu và phạm vi
 
 Web chatbot cá nhân, chạy local, một người dùng, LLM là Ollama model `gemma4:31b-cloud`.
-Người dùng chat với bot, các phiên chat (session) được lưu trong SQLite để mở lại và chat tiếp.
+Người dùng chat với bot, các phiên chat (session) được lưu trong SQLite (version sqlite3) để mở lại và chat tiếp.
 
 **Trong phạm vi**
 - Khung chat hiển thị hội thoại user ↔ bot, câu trả lời stream dần, render Markdown + code highlight.
@@ -16,6 +16,7 @@ Người dùng chat với bot, các phiên chat (session) được lưu trong SQ
 - Tên session tự sinh = 20 ký tự đầu của prompt đầu tiên.
 - Hover vào session hiện "⋯" → Rename / Delete.
 - Tiêu đề chung "AI Coding's Chatbot".
+- Dark mode / light mode có nút chuyển; giao diện responsive (desktop + mobile).
 - Docker cho frontend, backend và dữ liệu SQLite (volume).
 
 **Ngoài phạm vi**
@@ -29,6 +30,8 @@ Người dùng chat với bot, các phiên chat (session) được lưu trong SQ
 2. Session mới xuất hiện ở sidebar với tên = 20 ký tự đầu của prompt.
 3. Rename và Delete hoạt động qua menu "⋯" (hiện khi hover hoặc focus).
 4. `docker compose down` rồi `up` lại: lịch sử còn nguyên; click session → load lại và chat tiếp được.
+5. Nút theme chuyển light ↔ dark, reload trang vẫn giữ theme đã chọn.
+6. Ở chiều rộng < 768px: sidebar ẩn, mở/đóng được bằng hamburger; chat và ô nhập dùng được không bị vỡ layout.
 
 ## 2. Kiến trúc
 
@@ -56,7 +59,7 @@ backend/
   Dockerfile
 ```
 
-- Driver: `database/sql` + `modernc.org/sqlite` (thuần Go, `CGO_ENABLED=0`). SQL viết tay, không ORM.
+- Driver: `database/sql` + `modernc.org/sqlite` (thuần Go, `CGO_ENABLED=0`). Đây là engine SQLite 3, file `.db` tương thích hoàn toàn với `sqlite3` CLI. SQL viết tay, không ORM.
 - Bật `PRAGMA foreign_keys = ON` cho mỗi kết nối.
 
 ### 3.2 Cấu hình (env)
@@ -153,6 +156,26 @@ Server không đặt `WriteTimeout` để không cắt ngang stream dài.
 - Markdown: `marked` + `highlight.js`, HTML làm sạch bằng `DOMPurify` trước khi gán vào `innerHTML`.
 - Nhãn giao diện tiếng Anh: "New Chat", "Send", "Rename", "Delete".
 
+### 4.1a Dark mode / Light mode
+
+- Nút chuyển theme (icon mặt trời / mặt trăng) ở góc phải header, có `aria-label`.
+- Lần đầu truy cập: theo `prefers-color-scheme` của hệ điều hành. Sau khi người dùng bấm chuyển: lưu lựa chọn vào `localStorage` (`theme = 'light' | 'dark'`) và dùng lựa chọn đó cho các lần sau.
+- Cài đặt: `ThemeService` (signal `theme`) bật/tắt class `dark` trên `<html>`; Tailwind v4 khai báo `@custom-variant dark (&:where(.dark, .dark *));`. Một script nhỏ inline trong `index.html` đặt class trước khi Angular khởi động để tránh nháy màu.
+- Màu dark mode chỉ dùng token có trong design system (không tự chế mã màu mới):
+  - Nền chính `neutral-900`; sidebar / bubble user / ô nhập dùng `neutral-0` với độ trong suốt 5–10%; viền `neutral-0` 10%.
+  - Chữ chính `neutral-100`, chữ phụ `neutral-400`.
+  - Brand `500` cho nút Send, item đang chọn; danger `500` cho lỗi và Delete.
+- Theme highlight code: `github` cho light, `github-dark` cho dark (đổi theo class `dark`).
+
+### 4.1b Responsive
+
+- Breakpoint `md` (768px):
+  - **≥ md**: layout 2 cột, sidebar cố định rộng 260px.
+  - **< md**: sidebar ẩn; header có nút hamburger mở sidebar dạng drawer trượt từ trái, có backdrop. Drawer đóng khi chọn session, bấm "New Chat", bấm backdrop hoặc nhấn Esc.
+- Thiết bị cảm ứng (`@media (hover: none)`): nút "⋯" luôn hiển thị vì không có hover.
+- Nội dung chat giới hạn `max-w-3xl`, căn giữa; ô nhập dính đáy màn hình; tiêu đề header tự cắt bằng `truncate` khi màn hình hẹp.
+- Code block trong câu trả lời cuộn ngang, không làm vỡ layout.
+
 ### 4.2 Bố cục
 
 ```
@@ -172,7 +195,7 @@ Server không đặt `WriteTimeout` để không cắt ngang stream dài.
 
 | Component | Trách nhiệm |
 |---|---|
-| `AppComponent` | Header + layout 2 cột, `<router-outlet>` |
+| `AppComponent` | Header (tiêu đề, nút hamburger khi < md, nút chuyển theme) + layout 2 cột / drawer, `<router-outlet>` |
 | `SidebarComponent` | Nút "New Chat", danh sách `SessionItemComponent`, highlight session đang mở |
 | `SessionItemComponent` | Hiển thị title; nút "⋯" chỉ hiện khi hover hoặc focus-within; menu Rename / Delete. Rename: input inline, Enter lưu, Esc huỷ. Delete: dialog xác nhận nhỏ |
 | `ChatViewComponent` | Đọc route, danh sách `MessageComponent`, auto-scroll xuống cuối khi có nội dung mới, màn hình chào khi trống |
@@ -233,5 +256,6 @@ frontend/nginx.conf
 - `parseSse`: chunk bị cắt giữa, nhiều event trong một chunk.
 - `ChatStore` với `ApiService` giả: gửi tin đầu tiên tạo session; delete session đang mở reset về chat mới; lỗi stream hiển thị trên bubble.
 - `SessionItemComponent`: rename Enter lưu, Esc huỷ.
+- `ThemeService`: mặc định theo `prefers-color-scheme`; toggle cập nhật class `dark` và `localStorage`; đọc lại lựa chọn đã lưu.
 
-**Kiểm tra thủ công**: 4 tiêu chí hoàn thành ở mục 1.
+**Kiểm tra thủ công**: 6 tiêu chí hoàn thành ở mục 1.
